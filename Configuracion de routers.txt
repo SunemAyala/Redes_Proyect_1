@@ -1,0 +1,589 @@
+-------------------------------------------------------------
+Configuración de las PC
+PC1> show ip
+
+NAME        : PC1[1]
+IP/MASK     : 192.168.0.11/24
+GATEWAY     : 192.168.0.2
+DNS         :
+MAC         : 00:50:79:66:68:00
+LPORT       : 20012
+RHOST:PORT  : 127.0.0.1:20013
+MTU         : 1500
+
+
+PC2> show ip
+
+NAME        : PC2[1]
+IP/MASK     : 192.168.1.10/24
+GATEWAY     : 192.168.1.2
+DNS         :
+MAC         : 00:50:79:66:68:01
+LPORT       : 20014
+RHOST:PORT  : 127.0.0.1:20015
+MTU         : 1500
+
+
+PC3> show ip
+
+NAME        : PC3[1]
+IP/MASK     : 192.168.10.10/24
+GATEWAY     : 192.168.10.2
+DNS         :
+MAC         : 00:50:79:66:68:02
+LPORT       : 20016
+RHOST:PORT  : 127.0.0.1:20017
+MTU         : 1500
+
+
+
+PC4> show ip
+
+NAME        : PC4[1]
+IP/MASK     : 192.168.11.10/24
+GATEWAY     : 192.168.11.2
+DNS         :
+MAC         : 00:50:79:66:68:03
+LPORT       : 20018
+RHOST:PORT  : 127.0.0.1:20019
+MTU         : 1500
+------------------------------------------------------------
+Tabla de roters
+Edge#show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            unassigned      YES NVRAM  administratively down down
+FastEthernet1/0            10.0.0.1        YES NVRAM  up                    up
+FastEthernet1/1            10.0.0.5        YES NVRAM  up                    up
+FastEthernet2/0            unassigned      YES NVRAM  administratively down down
+FastEthernet2/1            unassigned      YES NVRAM  administratively down down
+Edge#show ip route
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is not set
+
+O    192.168.10.0/24 [110/3] via 10.0.0.6, 00:03:02, FastEthernet1/1
+                     [110/3] via 10.0.0.2, 00:03:02, FastEthernet1/0
+O    192.168.11.0/24 [110/3] via 10.0.0.6, 00:03:02, FastEthernet1/1
+                     [110/3] via 10.0.0.2, 00:03:02, FastEthernet1/0
+     10.0.0.0/30 is subnetted, 6 subnets
+O       10.0.0.8 [110/2] via 10.0.0.2, 00:03:02, FastEthernet1/0
+O       10.0.0.12 [110/2] via 10.0.0.6, 00:03:02, FastEthernet1/1
+C       10.0.0.0 is directly connected, FastEthernet1/0
+C       10.0.0.4 is directly connected, FastEthernet1/1
+O       10.0.0.16 [110/2] via 10.0.0.2, 00:03:02, FastEthernet1/0
+O       10.0.0.20 [110/2] via 10.0.0.6, 00:03:02, FastEthernet1/1
+O    192.168.0.0/24 [110/3] via 10.0.0.6, 00:03:02, FastEthernet1/1
+                    [110/3] via 10.0.0.2, 00:03:02, FastEthernet1/0
+O    192.168.1.0/24 [110/3] via 10.0.0.6, 00:03:11, FastEthernet1/1
+                    [110/3] via 10.0.0.2, 00:03:11, FastEthernet1/0
+Edge#
+
+
+
+R1#show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            unassigned      YES NVRAM  administratively down down
+FastEthernet1/0            10.0.0.2        YES NVRAM  up                    up
+FastEthernet1/1            unassigned      YES NVRAM  administratively down down
+FastEthernet2/0            10.0.0.17       YES NVRAM  up                    up
+FastEthernet2/1            10.0.0.9        YES NVRAM  up                    up
+R1#show ip route
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is not set
+
+O    192.168.10.0/24 [110/2] via 10.0.0.10, 00:03:45, FastEthernet2/1
+O    192.168.11.0/24 [110/2] via 10.0.0.10, 00:03:45, FastEthernet2/1
+     10.0.0.0/30 is subnetted, 6 subnets
+C       10.0.0.8 is directly connected, FastEthernet2/1
+O       10.0.0.12 [110/2] via 10.0.0.18, 00:03:45, FastEthernet2/0
+C       10.0.0.0 is directly connected, FastEthernet1/0
+O       10.0.0.4 [110/2] via 10.0.0.1, 00:03:45, FastEthernet1/0
+C       10.0.0.16 is directly connected, FastEthernet2/0
+O       10.0.0.20 [110/2] via 10.0.0.10, 00:03:45, FastEthernet2/1
+O    192.168.0.0/24 [110/2] via 10.0.0.18, 00:03:45, FastEthernet2/0
+O    192.168.1.0/24 [110/2] via 10.0.0.18, 00:03:45, FastEthernet2/0
+R1#
+
+
+
+R2#show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            unassigned      YES NVRAM  administratively down down
+FastEthernet1/0            unassigned      YES NVRAM  administratively down down
+FastEthernet1/1            10.0.0.6        YES NVRAM  up                    up
+FastEthernet2/0            10.0.0.21       YES NVRAM  up                    up
+FastEthernet2/1            10.0.0.13       YES NVRAM  up                    up
+R2#show ip route
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is not set
+
+O    192.168.10.0/24 [110/2] via 10.0.0.22, 00:04:22, FastEthernet2/0
+O    192.168.11.0/24 [110/2] via 10.0.0.22, 00:04:22, FastEthernet2/0
+     10.0.0.0/30 is subnetted, 6 subnets
+O       10.0.0.8 [110/2] via 10.0.0.22, 00:04:22, FastEthernet2/0
+C       10.0.0.12 is directly connected, FastEthernet2/1
+O       10.0.0.0 [110/2] via 10.0.0.5, 00:04:22, FastEthernet1/1
+C       10.0.0.4 is directly connected, FastEthernet1/1
+O       10.0.0.16 [110/2] via 10.0.0.14, 00:04:22, FastEthernet2/1
+C       10.0.0.20 is directly connected, FastEthernet2/0
+O    192.168.0.0/24 [110/2] via 10.0.0.14, 00:04:22, FastEthernet2/1
+O    192.168.1.0/24 [110/2] via 10.0.0.14, 00:04:22, FastEthernet2/1
+R2#
+
+
+TOR-1#show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            unassigned      YES NVRAM  administratively down down
+FastEthernet1/0            192.168.0.1     YES NVRAM  up                    up
+FastEthernet1/1            192.168.1.1     YES NVRAM  up                    up
+FastEthernet2/0            10.0.0.18       YES NVRAM  up                    up
+FastEthernet2/1            10.0.0.14       YES NVRAM  up                    up
+TOR-1#show ip route
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is not set
+
+O    192.168.10.0/24 [110/3] via 10.0.0.17, 00:05:04, FastEthernet2/0
+                     [110/3] via 10.0.0.13, 00:05:04, FastEthernet2/1
+O    192.168.11.0/24 [110/3] via 10.0.0.17, 00:05:04, FastEthernet2/0
+                     [110/3] via 10.0.0.13, 00:05:04, FastEthernet2/1
+     10.0.0.0/30 is subnetted, 6 subnets
+O       10.0.0.8 [110/2] via 10.0.0.17, 00:05:04, FastEthernet2/0
+C       10.0.0.12 is directly connected, FastEthernet2/1
+O       10.0.0.0 [110/2] via 10.0.0.17, 00:05:04, FastEthernet2/0
+O       10.0.0.4 [110/2] via 10.0.0.13, 00:05:04, FastEthernet2/1
+C       10.0.0.16 is directly connected, FastEthernet2/0
+O       10.0.0.20 [110/2] via 10.0.0.13, 00:05:04, FastEthernet2/1
+C    192.168.0.0/24 is directly connected, FastEthernet1/0
+C    192.168.1.0/24 is directly connected, FastEthernet1/1
+
+
+
+TOR-2#show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            unassigned      YES NVRAM  administratively down down
+FastEthernet1/0            192.168.10.1    YES NVRAM  up                    up
+FastEthernet1/1            192.168.11.1    YES NVRAM  up                    up
+FastEthernet2/0            10.0.0.22       YES NVRAM  up                    up
+FastEthernet2/1            10.0.0.10       YES NVRAM  up                    up
+TOR-2#show ip route
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is not set
+
+C    192.168.10.0/24 is directly connected, FastEthernet1/0
+C    192.168.11.0/24 is directly connected, FastEthernet1/1
+     10.0.0.0/30 is subnetted, 6 subnets
+C       10.0.0.8 is directly connected, FastEthernet2/1
+O       10.0.0.12 [110/2] via 10.0.0.21, 00:05:53, FastEthernet2/0
+O       10.0.0.0 [110/2] via 10.0.0.9, 00:05:53, FastEthernet2/1
+O       10.0.0.4 [110/2] via 10.0.0.21, 00:05:53, FastEthernet2/0
+O       10.0.0.16 [110/2] via 10.0.0.9, 00:05:53, FastEthernet2/1
+C       10.0.0.20 is directly connected, FastEthernet2/0
+O    192.168.0.0/24 [110/3] via 10.0.0.21, 00:05:53, FastEthernet2/0
+                    [110/3] via 10.0.0.9, 00:05:53, FastEthernet2/1
+O    192.168.1.0/24 [110/3] via 10.0.0.21, 00:05:53, FastEthernet2/0
+                    [110/3] via 10.0.0.9, 00:05:53, FastEthernet2/1
+
+
+
+
+-------------------------------------------------------------
+router Edge
+
+Edge#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+Edge(config)# hostname Edge
+Edge(config)#interface f1/0
+Edge(config-if)#ip address 10.0.0.1 255.255.255.252
+Edge(config-if)#no shutdown
+Edge(config-if)#
+*May 15 14:31:10.051: %LINK-3-UPDOWN: Interface FastEthernet1/0, changed state to up
+Edge(config-if)#ex
+*May 15 14:31:10.051: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/0 Physical Port Administrative State Down
+*May 15 14:31:11.051: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0, changed state to up
+Edge(config-if)#exit
+Edge(config)#interface f1/1
+Edge(config-if)#ip address 10.0.0.5 255.255.255.252
+Edge(config-if)#no shutdown
+Edge(config-if)#
+*May 15 14:31:38.171: %LINK-3-UPDOWN: Interface FastEthernet1/1, changed state to up
+Edge(config-if)#
+*May 15 14:31:38.171: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/1 Physical Port Administrative State Down
+*May 15 14:31:39.171: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/1, changed state to up
+Edge(config-if)#exit
+Edge(config)#ip routing
+Edge(config)#router ospf 1
+Edge(config-router)#network 10.0.0.0 0.0.0.3 area 0
+Edge(config-router)#network 10.0.0.4 0.0.0.3 area 0
+Edge(config-router)#exit
+Edge(config)#username admin privilege 15 secret admin
+Edge(config)#ip domain-name red.local
+Edge(config)#crypto key generate rsa
+The name for the keys will be: Edge.red.local
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+Edge(config)#
+*May 15 14:35:32.383: %SSH-5-ENABLED: SSH 1.99 has been enabled
+Edge(config)#line vty 0 4
+Edge(config-line)#login local
+Edge(config-line)#transport ssh
+                            ^
+% Invalid input detected at '^' marker.
+
+Edge(config-line)#transport input ssh
+Edge(config-line)#exit
+Edge(config)#end
+Edge#writ
+*May 15 14:36:28.487: %SYS-5-CONFIG_I: Configured from console by console
+Edge#write
+Building configuration...
+[OK]
+Edge#
+
+-------------------------------
+Router 1
+R1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#hostname R1
+R1(config)#INTERFACE F1/0
+R1(config-if)#ip address 10.0.0.2 255.255.255.252
+R1(config-if)#no shutdown
+R1(config-if)#exit
+R1(config)#
+*May 15 14:34:13.495: %LINK-3-UPDOWN: Interface FastEthernet1/0, changed state to up
+R1(config)#inter
+*May 15 14:34:13.495: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/0 Physical Port Administrative State Down
+*May 15 14:34:14.495: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0, changed state to up
+R1(config)#interface f2/1
+R1(config-if)#ip address 10.0.0.9 255.255.255.252
+R1(config-if)#no shutdown
+R1(config-if)#exi
+*May 15 14:34:45.903: %LINK-3-UPDOWN: Interface FastEthernet2/1, changed state to up
+R1(config-if)#exit
+*May 15 14:34:45.903: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/1 Physical Port Administrative State Down
+*May 15 14:34:46.903: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/1, changed state to up
+R1(config-if)#exit
+R1(config)#interface f2/0
+R1(config-if)#10.0.0.17 255.255.255.252
+              ^
+% Invalid input detected at '^' marker.
+
+R1(config-if)#ip address 10.0.0.17 255.255.255.252
+R1(config-if)#no shutdown
+R1(config-if)#exit
+R1(config)#
+*May 15 14:35:28.155: %LINK-3-UPDOWN: Interface FastEthernet2/0, changed state to up
+R1(config)#
+*May 15 14:35:28.155: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/0 Physical Port Administrative State Down
+*May 15 14:35:29.155: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/0, changed state to up
+R1(config)#ip routing
+R1(config)#router ospf 1
+R1(config-router)#network 10.0.0.0 0.0.0.3 area 0
+R1(config-router)#network
+*May 15 14:36:10.903: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.5 on FastEthernet1/0 from LOADING to FULL, Loading Done
+R1(config-router)#network 10.0.0.8 0.0.0.3 area 0
+R1(config-router)#network 10.0.0.16 0.0.0.3 area 0
+R1(config-router)#exit
+R1(config)#user admin privilage 15 secret admin
+                            ^
+% Invalid input detected at '^' marker.
+
+R1(config)#user admin privilege 15 secret admin
+R1(config)#ip domain-name red.local
+R1(config)#crypto key generate rsa
+The name for the keys will be: R1.red.local
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+R1(config)#
+*May 15 14:37:37.735: %SSH-5-ENABLED: SSH 1.99 has been enabled
+R1(config)#line vty 0 4
+R1(config-line)#loging local
+                     ^
+% Invalid input detected at '^' marker.
+
+R1(config-line)#login local
+R1(config-line)#transport input ssh
+R1(config-line)#exit
+R1(config)#end
+R1#w
+*May 15 14:38:11.599: %SYS-5-CONFIG_I: Configured from console by console
+R1#write
+Building configuration...
+[OK]
+R1#
+
+
+-------------------------------
+Router 2
+
+R2#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R2(config)#hostname R2
+R2(config)#interface f1/1
+R2(config-if)#ip address 10.0.0.6 255.255.255.252
+R2(config-if)#no shutdown
+R2(config-if)#exit
+*May 15 14:36:33.871: %LINK-3-UPDOWN: Interface FastEthernet1/1, changed state to up
+R2(config-if)#exit
+*May 15 14:36:33.871: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/1 Physical Port Administrative State Down
+*May 15 14:36:34.871: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/1, changed state to up
+R2(config-if)#exit
+R2(config)#interface f2/1
+R2(config-if)#ip address 10.0.0.13 255.255.255.252
+R2(config-if)#no shutdown
+R2(config-if)#interface f2/1
+*May 15 14:37:05.399: %LINK-3-UPDOWN: Interface FastEthernet2/1, changed state to up
+R2(config-if)#interface f2/1
+*May 15 14:37:05.399: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/1 Physical Port Administrative State Down
+*May 15 14:37:06.399: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/1, changed state to up
+R2(config-if)#interface f2/0
+R2(config-if)#ip address 10.0.0.21 255.255.255.252
+R2(config-if)#no shutdown
+R2(config-if)#exit
+R2(config)#
+*May 15 14:37:49.807: %LINK-3-UPDOWN: Interface FastEthernet2/0, changed state to up
+R2(config)#ip ro
+*May 15 14:37:49.807: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/0 Physical Port Administrative State Down
+*May 15 14:37:50.807: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/0, changed state to up
+R2(config)#ip routing
+R2(config)#router ospf 1
+R2(config-router)#network 10.0.0.4 0.0.0.3 area 0
+R2(config-router)#network 10.0.0.4 0.0.0.3 area 0
+*May 15 14:38:30.007: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.5 on FastEthernet1/1 from LOADING to FULL, Loading Done
+R2(config-router)#network 10.0.0.12 0.0.0.3 area 0
+R2(config-router)#network 10.0.0.20 0.0.0.3 area 0
+R2(config-router)#exit
+R2(config)#username admin privilege 15 secret admin
+R2(config)#ip domain-name red.local
+R2(config)#crypto key generate rsa
+The name for the keys will be: R2.red.local
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+R2(config)#
+*May 15 14:39:37.059: %SSH-5-ENABLED: SSH 1.99 has been enabled
+R2(config)#line vty 0 4
+R2(config-line)#login local
+R2(config-line)#transport input ssh
+R2(config-line)#exit
+R2(config)#end
+R2#wri
+*May 15 14:40:05.951: %SYS-5-CONFIG_I: Configured from console by console
+R2#write
+Building configuration...
+[OK]
+R2#
+
+----------------------------------
+Router TOR 1
+TOR-1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+TOR-1(config)#inteface f2/0
+                  ^
+% Invalid input detected at '^' marker.
+
+TOR-1(config)#interface f2/0
+TOR-1(config-if)#ip address 10.0.0.18 255.255.255.252
+TOR-1(config-if)#no shutdown
+TOR-1(config-if)#exit
+*May 15 14:42:51.023: %LINK-3-UPDOWN: Interface FastEthernet2/0, changed state to up
+TOR-1(config-if)#exit
+TOR-1(config)#
+*May 15 14:42:51.023: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/0 Physical Port Administrative State Down
+*May 15 14:42:52.023: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/0, changed state to up
+TOR-1(config)#interface f2/1
+TOR-1(config-if)#ip address 10.0.0.14 255.255.255.252
+TOR-1(config-if)#no shutdown
+TOR-1(config-if)#exit
+*May 15 14:43:12.119: %LINK-3-UPDOWN: Interface FastEthernet2/1, changed state to up
+TOR-1(config-if)#exit
+TOR-1(config)#
+*May 15 14:43:12.119: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/1 Physical Port Administrative State Down
+*May 15 14:43:13.119: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/1, changed state to up
+TOR-1(config)#interface f1/0
+TOR-1(config-if)#ip address 192.168.0.1 255.255.255.0
+TOR-1(config-if)#no shutdown
+TOR-1(config-if)#
+*May 15 14:45:43.935: %LINK-3-UPDOWN: Interface FastEthernet1/0, changed state to up
+TOR-1(config-if)#
+*May 15 14:45:43.935: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/0 Physical Port Administrative State Down
+*May 15 14:45:44.935: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0, changed state to up
+TOR-1(config-if)#exit
+TOR-1(config)#ip routing
+TOR-1(config)#router ospf 1
+TOR-1(config-router)#network 10.0.0.16 0.0.0.3 area 0
+TOR-1(config-router)#network 10.0.0.1 0.0.0.3 area 0
+*May 15 14:46:45.395: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.17 on FastEthernet2/0 from LOADING to FULL, Loading Done
+TOR-1(config-router)#network 10.0.0.12 0.0.0.3 area 0
+TOR-1(config-router)#network 10.0.0.12 0.0.0.255 area 0
+*May 15 14:46:56.771: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.21 on FastEthernet2/1 from LOADING to FULL, Loading Done
+TOR-1(config-router)#network 192.168.0.0 0.0.0.255 area 0
+TOR-1(config-router)#network 192.168.1.0 0.0.0.255 area 0
+TOR-1(config-router)#username admin privilege 15 secret admin
+TOR-1(config)#ip domain-name red.local
+TOR-1(config)#crypto key generate rsa
+The name for the keys will be: TOR-1.red.local
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+TOR-1(config)#
+*May 15 14:49:05.367: %SSH-5-ENABLED: SSH 1.99 has been enabled
+TOR-1(config)#line vty 0 4
+TOR-1(config-line)#login local
+TOR-1(config-line)#transport input ssh
+TOR-1(config-line)#exit
+TOR-1(config)#interface f1/1
+TOR-1(config-if)#ip address 192.168.1.1 255.255.255.0
+TOR-1(config-if)#no shutdown
+TOR-1(config-if)#exit
+TOR-1(config)#
+*May 15 14:50:20.731: %LINK-3-UPDOWN: Interface FastEthernet1/1, changed state to up
+TOR-1(config)#
+*May 15 14:50:20.731: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/1 Physical Port Administrative State Down
+*May 15 14:50:21.731: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/1, changed state to up
+TOR-1(config)#end
+TOR-1#
+*May 15 14:50:23.923: %SYS-5-CONFIG_I: Configured from console by console
+TOR-1#write
+Building configuration...
+[OK]
+--------------------------------
+TOR-2
+
+TOR-2#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+TOR-2(config)#interface f2/0
+TOR-2(config-if)#ip addres B?
+% Unrecognized command
+TOR-2(config-if)#ip address 10.0.0.22 255.255.255.252
+TOR-2(config-if)#no shutdown
+TOR-2(config-if)#ex
+*May 15 14:46:41.411: %LINK-3-UPDOWN: Interface FastEthernet2/0, changed state to up
+TOR-2(config-if)#exit
+*May 15 14:46:41.411: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/0 Physical Port Administrative State Down
+*May 15 14:46:42.411: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/0, changed state to up
+TOR-2(config-if)#exit
+TOR-2(config)#interface f2/1
+TOR-2(config-if)#ip address 10.0.0.10 255.255.255.252
+TOR-2(config-if)#no shutdown
+TOR-2(config-if)#exit
+*May 15 14:47:13.483: %LINK-3-UPDOWN: Interface FastEthernet2/1, changed state to up
+TOR-2(config-if)#exit
+TOR-2(config)#
+*May 15 14:47:13.483: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa2/1 Physical Port Administrative State Down
+*May 15 14:47:14.483: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/1, changed state to up
+TOR-2(config)#interface f1/0
+TOR-2(config-if)#ip address 192.168.10.1 255.255.255.0
+TOR-2(config-if)#no shutdown
+TOR-2(config-if)#no shutdown
+*May 15 14:47:51.819: %LINK-3-UPDOWN: Interface FastEthernet1/0, changed state to up
+TOR-2(config-if)#exit
+TOR-2(config)#
+*May 15 14:47:51.819: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/0 Physical Port Administrative State Down
+*May 15 14:47:52.819: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0, changed state to up
+TOR-2(config)#interface f1/1
+TOR-2(config-if)#ip address 192.168.11.1 255.255.255.0
+TOR-2(config-if)#no shutdown
+TOR-2(config-if)#exit
+TOR-2(config)#
+*May 15 14:48:15.487: %LINK-3-UPDOWN: Interface FastEthernet1/1, changed state to up
+TOR-2(config)#
+*May 15 14:48:15.487: %ENTITY_ALARM-6-INFO: CLEAR INFO Fa1/1 Physical Port Administrative State Down
+*May 15 14:48:16.487: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/1, changed state to up
+TOR-2(config)#ip routing
+TOR-2(config)#router ospf 1
+TOR-2(config-router)#network 10.0.0.20 0.0.0.3 area 0
+TOR-2(config-router)#network 10.0.0.8 0.0.0.3 area 0
+TOR-2(config-router)#
+*May 15 14:51:53.523: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.21 on FastEthernet2/0 from LOADING to FULL, Loading Done
+TOR-2(config-router)#network 10.0.0.8 0.0.0.255 area 0
+*May 15 14:52:04.519: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.17 on FastEthernet2/1 from LOADING to FULL, Loading Done
+TOR-2(config-router)#network 192.168.10.0 0.0.0.255 area 0
+TOR-2(config-router)#network 192.168.11.0 0.0.0.255 area 0
+TOR-2(config-router)#exit
+TOR-2(config)#username admin privilege 15 secret admin
+TOR-2(config)#ip domain-name red.local
+TOR-2(config)#crypto key generete rsa
+                              ^
+% Invalid input detected at '^' marker.
+
+TOR-2(config)#crypto key generate rsa
+The name for the keys will be: TOR-2.red.local
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+TOR-2(config)#
+*May 15 14:53:35.427: %SSH-5-ENABLED: SSH 1.99 has been enabled
+TOR-2(config)#line vty 0 4
+TOR-2(config-line)#login local
+TOR-2(config-line)#transport input ssh
+TOR-2(config-line)#exit
+TOR-2(config)#end
+TOR-2#wriy
+*May 15 14:54:04.667: %SYS-5-CONFIG_I: Configured from console by console
+TOR-2#write
+Building configuration...
+[OK]
+TOR-2#
+
+
+
+
+
+
+
