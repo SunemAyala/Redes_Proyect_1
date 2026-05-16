@@ -61,37 +61,76 @@ def ssh_config_user(router, action, username, privilege):
 
 def trap_receiver_daemon():
     """Hilos que escucha traps SNMP (simulado o simplificado)."""
-    # Para una implementación real de receptor de traps se requiere un socket UDP
-    # o usar la librería pysnmp.carrier.asyncore.
     print("[Trap Listener] Iniciando receptor en puerto 162...")
     while daemon_config["activo"]:
-        # Aquí iría el bucle de recepción de paquetes UDP
         time.sleep(10)
 
 # ==========================================
-# VARIABLES GLOBALES PARA EL DEMONIO
+# VARIABLES GLOBALES Y PROCESOS AUTÓNOMOS
 # ==========================================
 daemon_config = {
     "activo": False,
     "intervalo": 300,
     "thread": None,
-    "trap_thread": None
+    "trap_thread": None,
+    "monitoreo_threads": {} # {interfaz_id: thread}
 }
 
+def monitoreo_interfaz_worker(interfaz_id, intervalo):
+    """Proceso que recolecta muestras de octetos periódicamente."""
+    from .models import Interfaz
+    from monitoreo.models import RegistroOcteto, MonitoreoConfig
+    
+    print(f"[Monitoreo] Iniciando trabajador para Interfaz ID: {interfaz_id}")
+    while True:
+        try:
+            # Verificar si el monitoreo sigue activo en la base de datos
+            config = MonitoreoConfig.objects.get(interfaz_id=interfaz_id)
+            if not config.monitoreo_octetos_activo:
+                break
+            
+            interfaz = Interfaz.objects.get(id=interfaz_id)
+            # SIMULACIÓN / SNMP REAL
+            if getattr(settings, 'DEBUG', True):
+                valor = random.randint(100, 1000)
+            else:
+                community = os.getenv("SNMP_COMMUNITY", "public")
+                # OID para ifInOctets: .1.3.6.1.2.1.2.2.1.10.<index>
+                res = snmp_get(interfaz.router.ip_administrativa, community, f'.1.3.6.1.2.1.2.2.1.10.1')
+                valor = int(res) if res else 0
+
+            RegistroOcteto.objects.create(interfaz=interfaz, octetos_entrada=valor)
+            time.sleep(intervalo)
+        except Exception as e:
+            print(f"Error en monitoreo {interfaz_id}: {e}")
+            break
+    print(f"[Monitoreo] Deteniendo trabajador para Interfaz ID: {interfaz_id}")
+
 def descubrimiento_red_daemon():
-    """Hilo secundario que explora la red vía SNMP CDP/LLDP."""
+    """Explora la red buscando vecinos y actualizando información."""
     community = os.getenv("SNMP_COMMUNITY", "public")
     while daemon_config["activo"]:
         routers = Router.objects.all()
         for r in routers:
-            # Consultar descripción del sistema vía SNMP
-            desc = snmp_get(r.ip_administrativa, community, '.1.3.6.1.2.1.1.1.0')
-            if desc:
-                r.sistema_operativo = desc
-                r.save()
+            print(f"[{timezone.now()}] Escaneando {r.hostname}...")
             
-            # Aquí se añadiría la lógica de caminar por la tabla CDP para descubrir vecinos
-            print(f"[{timezone.now()}] Escaneando router: {r.hostname}")
+            if not getattr(settings, 'DEBUG', True):
+                # Actualizar SO vía SNMP REAL
+                desc = snmp_get(r.ip_administrativa, community, '.1.3.6.1.2.1.1.1.0')
+                if desc:
+                    r.sistema_operativo = desc
+                    r.save()
+            
+            # SIMULACIÓN DE DESCUBRIMIENTO DINÁMICO
+            if getattr(settings, 'DEBUG', True) and random.random() > 0.8:
+                new_host = f"TOR-{random.randint(10, 99)}"
+                if not Router.objects.filter(hostname=new_host).exists():
+                    Router.objects.create(
+                        hostname=new_host, rol='LEAF', 
+                        ip_administrativa=f"192.168.100.{random.randint(10, 250)}",
+                        ip_loopback=f"192.168.50.{random.randint(10, 250)}"
+                    )
+                    print(f" -> ¡Nuevo router descubierto dinámicamente: {new_host}!")
             
         time.sleep(daemon_config["intervalo"])
 
@@ -196,11 +235,17 @@ def detalle_router(request, hostname):
     # Requisito estricto: Devolver 404 si el dispositivo no existe
     router = get_object_or_404(Router, hostname=hostname)
     
-    # En modo Real (DEBUG=False), aquí actualizarías los campos leyendo vía SNMP antes de responder
+    # En modo Real (DEBUG=False), actualizamos la información vía SNMP
     if not getattr(settings, 'DEBUG', True):
-        # router.sistema_operativo = consultar_snmp_sysDescr(router.ip_administrativa)
-        # router.save()
-        pass
+        community = os.getenv("SNMP_COMMUNITY", "public")
+        desc = snmp_get(router.ip_administrativa, community, '.1.3.6.1.2.1.1.1.0')
+        if desc:
+            router.sistema_operativo = desc
+            router.save()
+    else:
+        # En modo DEBUG, podemos simular una actualización
+        router.sistema_operativo = "Cisco IOS (Simulado)"
+        router.save()
 
     return JsonResponse({
         "Nombre": router.hostname,
@@ -386,21 +431,23 @@ def monitoreo_octetos(request, hostname, interfaz, tiempo):
         return JsonResponse({"interfaz": interfaz, "muestras_recuperadas": datos}, status=200)
 
     elif request.method == 'POST':
-        # Activa el proceso de monitoreo autónomo indicando el intervalo (tiempo)
-        # En modo simulación, creamos unas muestras ficticias de inmediato para tener datos que graficar
-        if getattr(settings, 'DEBUG', True):
-            import random
-            from django.utils import timezone
-            for t in range(5):
-                RegistroOcteto.objects.create(
-                    interfaz=obj_interfaz,
-                    octetos_entrada=random.randint(5000, 25000),
-                    timestamp=timezone.now()
-                )
+        # Activa el proceso de monitoreo autónomo
+        from monitoreo.models import MonitoreoConfig
+        config, _ = MonitoreoConfig.objects.update_or_create(
+            interfaz=obj_interfaz,
+            defaults={'monitoreo_octetos_activo': True, 'intervalo_muestreo': tiempo}
+        )
+        
+        # Lanzar el hilo trabajador para esta interfaz
+        t = threading.Thread(target=monitoreo_interfaz_worker, args=(obj_interfaz.id, tiempo), daemon=True)
+        t.start()
+        daemon_config["monitoreo_threads"][obj_interfaz.id] = t
+        
         return JsonResponse({"monitoreo": "activado", "interfaz": interfaz, "intervalo_muestreo_segundos": tiempo}, status=200)
 
     elif request.method == 'DELETE':
-        # Detiene el hilo/proceso de monitoreo de octetos
+        from monitoreo.models import MonitoreoConfig
+        MonitoreoConfig.objects.filter(interfaz=obj_interfaz).update(monitoreo_octetos_activo=False)
         return JsonResponse({"monitoreo": "detenido", "interfaz": interfaz}, status=200)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
