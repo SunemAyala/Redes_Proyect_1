@@ -17,7 +17,27 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
+from gestion_red import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+   # Usuarios Globales
+    path('usuarios/', views.usuarios_globales, name='usuarios_globales'),
+    
+    # Enrutadores
+    path('routers', views.lista_routers, name='lista_routers'),
+    path('routers/<str:hostname>/', views.detalle_router, name='detalle_router'),
+    
+    # Interfaces e Usuarios por Enrutador
+    path('routers/<str:hostname>/interfaces', views.interfaces_router, name='interfaces_router'),
+    path('routers/<str:hostname>/usuarios/', views.usuarios_por_enrutador, name='usuarios_por_enrutador'),
+    
+    # Topología
+    path('topologia', views.gestionar_topologia, name='gestionar_topologia'),
+    path('topologia/grafica', views.grafica_topologia, name='grafica_topologia'),
+    
+    # Monitoreo y Trampas por Interfaz
+    path('routers/<str:hostname>/interfaces/<str:interfaz>/octetos/<int:tiempo>', views.monitoreo_octetos, name='monitoreo_octetos'),
+    path('routers/<str:hostname>/interfaces/<str:interfaz>/estado', views.gestion_traps, name='gestion_traps'),
+    path('routers/<str:hostname>/interfaces/<str:interfaz>/grafica', views.grafica_monitoreo, name='grafica_monitoreo'),
 ]
