@@ -16,11 +16,13 @@ import os
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+# Si no existe .env o no tiene SECRET_KEY, usar una clave de desarrollo por defecto
+SECRET_KEY = os.getenv("SECRET_KEY", "clave-de-desarrollo-insegura-cambiar-en-produccion")
 
-DEBUG = os.getenv("DEBUG") == "True"
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+# Permitir todas las conexiones por defecto para desarrollo
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -119,3 +121,32 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} [{name}:{lineno}] {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout',  # Fuerza la salida a la terminal de runserver
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',  # Te mostrará las peticiones HTTP por defecto
+        },
+        # Reemplaza 'monitoreo' por el nombre de tus apps para capturar tus propios logs
+        'monitoreo': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
