@@ -25,8 +25,23 @@ from monitoreo.models import RegistroOcteto
 # UTILIDADES DE RED (SNMP / SSH / TRAPS)
 # ==========================================
 
+# Variable para forzar el uso de Mocks de red en caso de no tener GNS3 levantado
+# Para usar GNS3 real, cambia esto a False.
+USE_NETWORK_MOCKS = True
+
 def snmp_get(ip, community, oid):
     """Realiza una consulta SNMP Get para un OID específico."""
+    if USE_NETWORK_MOCKS:
+        # Respuestas MOCK hardcodeadas
+        print(f"[MOCK SNMP GET] Consultando {ip} OID: {oid}")
+        if '1.1.1.0' in oid:  # sysDescr
+            return "Cisco IOS Software, C2900 Software (C2900-UNIVERSALK9-M), MOCKED"
+        elif '.2.2.1.10.' in oid:  # ifInOctets
+            return str(random.randint(500, 5000))
+        elif '.2.2.1.2.' in oid: # ifDescr / ifName (walk simulado, devuelto como get para simplificar aquí)
+            return "FastEthernet0/0"
+        return "1"
+
     errorIndication, errorStatus, errorIndex, varBinds = next(
         getCmd(SnmpEngine(),
                CommunityData(community),
@@ -35,12 +50,57 @@ def snmp_get(ip, community, oid):
                ObjectType(ObjectIdentity(oid)))
     )
     if errorIndication or errorStatus:
+        print(f"[SNMP Error] {errorIndication or errorStatus}")
         return None
     for varBind in varBinds:
         return str(varBind[1])
 
+def snmp_walk(ip, community, oid):
+    """Realiza una consulta SNMP Walk para un OID base."""
+    if USE_NETWORK_MOCKS:
+        print(f"[MOCK SNMP WALK] Consultando {ip} OID Base: {oid}")
+        # Simulamos respuestas del WALK basadas en el OID
+        if '1.3.6.1.2.1.2.2.1.2' in oid: # ifDescr
+            return {1: "FastEthernet0/0", 2: "FastEthernet1/0", 3: "GigabitEthernet0/0"}
+        if '1.3.6.1.2.1.2.2.1.8' in oid: # ifOperStatus
+            return {1: 1, 2: 1, 3: 2} # 1=up, 2=down
+        if '1.3.6.1.4.1.9.9.23.1.2.1.1.6' in oid: # cdpCacheDeviceId
+            return {1: "Router-Mock-Vecino"}
+        if '1.3.6.1.4.1.9.9.23.1.2.1.1.4' in oid: # cdpCacheAddress (hex)
+            return {1: "192.168.100.99"}
+        return {}
+
+    resultados = {}
+    for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(
+        SnmpEngine(),
+        CommunityData(community),
+        UdpTransportTarget((ip, 161)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid)),
+        lexicographicMode=False
+    ):
+        if errorIndication or errorStatus:
+            print(f"[SNMP Walk Error] {errorIndication or errorStatus}")
+            break
+        for varBind in varBinds:
+            # Extraer el último índice del OID
+            oid_completo = str(varBind[0])
+            indice = int(oid_completo.split('.')[-1])
+            valor = str(varBind[1])
+            # Limpiar valores hexadecimales de IPs de cdpCacheAddress si es necesario, 
+            # pero por ahora lo guardamos como string.
+            resultados[indice] = valor
+            
+    return resultados
+
 def ssh_config_user(router, action, username, privilege):
     """Configura usuarios vía SSH usando Netmiko."""
+    if USE_NETWORK_MOCKS:
+        print(f"[MOCK SSH] Conectando a {router.hostname} ({router.ip_administrativa})")
+        print(f"[MOCK SSH] Ejecutando action: {action} para usuario: {username}")
+        time.sleep(0.1) # simula latencia
+        return True
+
     device = {
         'device_type': 'cisco_ios',
         'host': router.ip_administrativa,
@@ -60,10 +120,48 @@ def ssh_config_user(router, action, username, privilege):
         return False
 
 def trap_receiver_daemon():
-    """Hilos que escucha traps SNMP (simulado o simplificado)."""
+    """Hilo que escucha traps SNMP (en el puerto 162) o simula recibirlos."""
     print("[Trap Listener] Iniciando receptor en puerto 162...")
-    while daemon_config["activo"]:
-        time.sleep(10)
+    from .models import Interfaz
+    
+    if USE_NETWORK_MOCKS:
+        while daemon_config["activo"]:
+            time.sleep(20)
+            if random.random() > 0.5:
+                interfaces = list(Interfaz.objects.all())
+                if interfaces:
+                    interf = random.choice(interfaces)
+                    interf.estado = not interf.estado
+                    interf.save()
+                    evento = "LinkUp" if interf.estado else "LinkDown"
+                    print(f"[MOCK TRAP] Recibido {evento} para {interf.router.hostname} - {interf.nombre}")
+    else:
+        # Implementación real usando socket UDP para escuchar en el puerto 162
+        import socket
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.bind(("0.0.0.0", 162))
+            sock.settimeout(3.0)
+            while daemon_config["activo"]:
+                try:
+                    data, addr = sock.recvfrom(65535)
+                    ip_sender = addr[0]
+                    print(f"[TRAP REAL] Trap recibido de {ip_sender}")
+                    
+                    # Como parsear ASN.1 crudo es complejo, reaccionaremos al trap del sender
+                    # alternando el estado de la primera interfaz por demostración (se debe ajustar según OID de ifIndex)
+                    interf = Interfaz.objects.filter(router__ip_administrativa=ip_sender).first()
+                    if interf:
+                        interf.estado = not interf.estado
+                        interf.save()
+                except socket.timeout:
+                    continue
+        except PermissionError:
+            print("[Trap Listener] ERROR CRÍTICO: Permisos insuficientes para abrir el puerto 162. Ejecuta con 'sudo'.")
+            daemon_config["activo"] = False
+        except Exception as e:
+            print(f"[Trap Listener] Error: {e}")
+            daemon_config["activo"] = False
 
 # ==========================================
 # VARIABLES GLOBALES Y PROCESOS AUTÓNOMOS
@@ -91,12 +189,23 @@ def monitoreo_interfaz_worker(interfaz_id, intervalo):
             
             interfaz = Interfaz.objects.get(id=interfaz_id)
             # SIMULACIÓN / SNMP REAL
-            if getattr(settings, 'DEBUG', True):
+            if getattr(settings, 'DEBUG', True) and not USE_NETWORK_MOCKS:
                 valor = random.randint(100, 1000)
             else:
                 community = os.getenv("SNMP_COMMUNITY", "public")
-                # OID para ifInOctets: .1.3.6.1.2.1.2.2.1.10.<index>
-                res = snmp_get(interfaz.router.ip_administrativa, community, f'.1.3.6.1.2.1.2.2.1.10.1')
+                # 1. Resolver el índice SNMP de la interfaz de forma dinámica
+                ifDescr_walk = snmp_walk(interfaz.router.ip_administrativa, community, '1.3.6.1.2.1.2.2.1.2')
+                
+                snmp_index = 1 # Valor por defecto si no se encuentra
+                for idx, desc in ifDescr_walk.items():
+                    # Normalizar el string para compararlo con el nombre de la BD (f1_0 vs FastEthernet1/0)
+                    desc_norm = desc.replace("FastEthernet", "f").replace("GigabitEthernet", "g").replace("/", "_").lower()
+                    if interfaz.nombre.lower() == desc_norm or interfaz.nombre.lower() in desc.lower():
+                        snmp_index = idx
+                        break
+
+                # 2. Consultar ifInOctets con el índice correcto
+                res = snmp_get(interfaz.router.ip_administrativa, community, f'.1.3.6.1.2.1.2.2.1.10.{snmp_index}')
                 valor = int(res) if res else 0
 
             RegistroOcteto.objects.create(interfaz=interfaz, octetos_entrada=valor)
@@ -114,15 +223,44 @@ def descubrimiento_red_daemon():
         for r in routers:
             print(f"[{timezone.now()}] Escaneando {r.hostname}...")
             
-            if not getattr(settings, 'DEBUG', True):
-                # Actualizar SO vía SNMP REAL
+            if not getattr(settings, 'DEBUG', True) or USE_NETWORK_MOCKS:
+                # Actualizar SO vía SNMP
                 desc = snmp_get(r.ip_administrativa, community, '.1.3.6.1.2.1.1.1.0')
                 if desc:
                     r.sistema_operativo = desc
                     r.save()
+                    
+                # Descubrir vecinos CDP
+                vecinos_nombres = snmp_walk(r.ip_administrativa, community, '1.3.6.1.4.1.9.9.23.1.2.1.1.6')
+                vecinos_ips = snmp_walk(r.ip_administrativa, community, '1.3.6.1.4.1.9.9.23.1.2.1.1.4')
+                
+                for idx, nombre_vecino in vecinos_nombres.items():
+                    ip_vecino = str(vecinos_ips.get(idx, "192.168.0.0"))
+                    
+                    if nombre_vecino and not Router.objects.filter(hostname=nombre_vecino).exists():
+                        nuevo_router = Router.objects.create(
+                            hostname=nombre_vecino, rol='LEAF', 
+                            ip_administrativa=ip_vecino,
+                            ip_loopback=f"192.168.50.{random.randint(10, 250)}"
+                        )
+                        print(f" -> ¡Nuevo router descubierto dinámicamente vía CDP: {nombre_vecino} ({ip_vecino})!")
+                        
+                        # Población inmediata de interfaces del nuevo router
+                        from .models import Interfaz
+                        ifDescr_walk = snmp_walk(ip_vecino, community, '1.3.6.1.2.1.2.2.1.2')
+                        ifOper_walk = snmp_walk(ip_vecino, community, '1.3.6.1.2.1.2.2.1.8')
+                        
+                        for idx_if, nombre_if in ifDescr_walk.items():
+                            estado = True if str(ifOper_walk.get(idx_if, '2')) == '1' else False
+                            Interfaz.objects.get_or_create(
+                                router=nuevo_router,
+                                nombre=str(nombre_if),
+                                defaults={'estado': estado, 'ip_address': '0.0.0.0', 'netmask': '0.0.0.0'}
+                            )
+                        print(f"    -> Interfaces de {nombre_vecino} guardadas exitosamente.")
             
-            # SIMULACIÓN DE DESCUBRIMIENTO DINÁMICO
-            if getattr(settings, 'DEBUG', True) and random.random() > 0.8:
+            # SIMULACIÓN DE DESCUBRIMIENTO DINÁMICO (Fallback)
+            if getattr(settings, 'DEBUG', True) and not USE_NETWORK_MOCKS and random.random() > 0.8:
                 new_host = f"TOR-{random.randint(10, 99)}"
                 if not Router.objects.filter(hostname=new_host).exists():
                     Router.objects.create(
@@ -130,7 +268,7 @@ def descubrimiento_red_daemon():
                         ip_administrativa=f"192.168.100.{random.randint(10, 250)}",
                         ip_loopback=f"192.168.50.{random.randint(10, 250)}"
                     )
-                    print(f" -> ¡Nuevo router descubierto dinámicamente: {new_host}!")
+                    print(f" -> ¡Nuevo router simulado: {new_host}!")
             
         time.sleep(daemon_config["intervalo"])
 
@@ -312,12 +450,12 @@ def usuarios_por_enrutador(request, hostname):
         except (json.JSONDecodeError, KeyError):
             return JsonResponse({"error": "JSON malformado"}, status=400)
 
-        if getattr(settings, 'DEBUG', True):
-            # SIMULACIÓN SSH
+        if getattr(settings, 'DEBUG', True) and not USE_NETWORK_MOCKS:
+            # SIMULACIÓN SIN MOCK
             ssh_exitoso = True
         else:
-            # REAL SSH
-            ssh_exitoso = True
+            # REAL SSH O MOCK
+            ssh_exitoso = ssh_config_user(router, request.method, username, privilegio)
 
         if ssh_exitoso:
             if request.method == 'POST':

@@ -1,9 +1,9 @@
 asgiref==3.11.1
-Django==6.0.5
+Django==5.2.14
 python-dotenv==1.2.2
 sqlparse==0.5.5
 networkx==3.4.2
 matplotlib==3.10.0
 netmiko==4.5.0
-pysnmp-lextudio==6.2.10
-pyasn1==0.6.1
+pysnmp-lextudio==6.3.0
+pyasn1>=0.4.8,<0.6.1
