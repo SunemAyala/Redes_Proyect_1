@@ -27,11 +27,12 @@ from functools import wraps
 def catch_errors(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        print(f"\n[{timezone.now().strftime('%H:%M:%S')}] ---> [API REQUEST] Entrando a endpoint: {func.__name__.upper()}")
         try:
             return func(*args, **kwargs)
         except Exception as e:
             error_msg = traceback.format_exc()
-            print(f"[ERROR en {func.__name__}]: {error_msg}")
+            print(f"[{timezone.now().strftime('%H:%M:%S')}] <--- [ERROR CRÍTICO en {func.__name__}]: \n{error_msg}")
             # Forzamos HTTP 200 temporalmente para que Django no intercepte y sobrescriba el JSON con su propia página HTML genérica.
             return JsonResponse({"error": "Error interno capturado", "detalle": str(e), "trace": error_msg}, status=200)
     return wrapper
@@ -309,6 +310,7 @@ def usuarios_globales(request):
         return JsonResponse({"error": "Tablas no encontradas", "solucion": "Ejecuta python manage.py migrate", "detalle": str(db_err)}, status=400)
 
     if request.method == 'GET':
+        print("[usuarios_globales] Procesando GET: Agrupando usuarios de la BD.")
         # Agrupar usuarios por nombre para la respuesta global
         usuarios = DispositivoUsuario.objects.all()
         data = {}
@@ -326,6 +328,7 @@ def usuarios_globales(request):
         return JsonResponse(list(data.values()), safe=False, status=200)
 
     elif request.method in ['POST', 'PUT', 'DELETE']:
+        print(f"[usuarios_globales] Procesando {request.method}: Extrayendo body JSON.")
         try:
             body = json.loads(request.body)
             username = body.get('nombre')
@@ -371,8 +374,10 @@ def usuarios_globales(request):
 def lista_routers(request):
     """GET: Regresa la información general de todos los routers."""
     if request.method != 'GET':
+        print("[lista_routers] Metodo no permitido.")
         return JsonResponse({"error": "Método no permitido"}, status=405)
         
+    print("[lista_routers] Procesando GET: Recopilando informacion de todos los routers.")
     routers = Router.objects.all()
     respuesta = []
     for r in routers:
@@ -395,6 +400,7 @@ def detalle_router(request, hostname):
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
     # Requisito estricto: Devolver 404 si el dispositivo no existe
+    print(f"[detalle_router] Procesando GET: Buscando router {hostname}")
     router = get_object_or_404(Router, hostname=hostname)
     
     # En modo Real (DEBUG=False), actualizamos la información vía SNMP
@@ -430,6 +436,7 @@ def interfaces_router(request, hostname):
     if request.method != 'GET':
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
+    print(f"[interfaces_router] Procesando GET: Buscando interfaces de {hostname}")
     router = get_object_or_404(Router, hostname=hostname)
     interfaces = Interfaz.objects.filter(router=router)
     
@@ -464,31 +471,40 @@ def usuarios_por_enrutador(request, hostname):
     router = get_object_or_404(Router, hostname=hostname)
 
     if request.method == 'GET':
+        print(f"[usuarios_por_enrutador] Procesando GET: Usuarios en {hostname}")
         usuarios = DispositivoUsuario.objects.filter(router=router)
         respuesta = [{"nombre": u.username, "permisos": u.privilegio} for u in usuarios]
         return JsonResponse(respuesta, safe=False, status=200)
 
     elif request.method in ['POST', 'PUT', 'DELETE']:
+        print(f"[usuarios_por_enrutador] Procesando {request.method}: Extrayendo body JSON para {hostname}")
         try:
             body = json.loads(request.body)
             username = body.get('nombre')
             privilegio = body.get('permisos')
+            print(f"[usuarios_por_enrutador] Datos recibidos: usuario={username}, privilegio={privilegio}")
         except (json.JSONDecodeError, KeyError):
+            print(f"[usuarios_por_enrutador] ERROR: JSON malformado en la peticion")
             return JsonResponse({"error": "JSON malformado"}, status=400)
 
         if getattr(settings, 'DEBUG', True) and not USE_NETWORK_MOCKS:
             # SIMULACIÓN SIN MOCK
+            print(f"[usuarios_por_enrutador] Modo SIMULACION: Saltando SSH real")
             ssh_exitoso = True
         else:
             # REAL SSH O MOCK
+            print(f"[usuarios_por_enrutador] Ejecutando SSH (real o mock) en {hostname}...")
             ssh_exitoso = ssh_config_user(router, request.method, username, privilegio)
+            print(f"[usuarios_por_enrutador] Resultado SSH: {'EXITOSO' if ssh_exitoso else 'FALLIDO'}")
 
         if ssh_exitoso:
             if request.method == 'POST':
                 DispositivoUsuario.objects.get_or_create(username=username, router=router, defaults={'privilegio': privilegio})
+                print(f"[usuarios_por_enrutador] Usuario '{username}' CREADO en {hostname}")
                 return JsonResponse({"nombre": username, "permisos": privilegio, "estado": f"Creado en {hostname}"}, status=201)
             elif request.method == 'PUT':
                 DispositivoUsuario.objects.filter(username=username, router=router).update(privilegio=privilegio)
+                print(f"[usuarios_por_enrutador] Usuario '{username}' ACTUALIZADO en {hostname}")
                 return JsonResponse({"nombre": username, "permisos": privilegio, "estado": f"Actualizado en {hostname}"}, status=200)
             elif request.method == 'DELETE':
                 DispositivoUsuario.objects.filter(username=username, router=router).delete()
@@ -514,6 +530,7 @@ def gestionar_topologia(request):
         return JsonResponse({"error": "Tablas no encontradas", "solucion": "Ejecuta python manage.py migrate", "detalle": str(db_err)}, status=400)
 
     if request.method == 'GET':
+        print("[gestionar_topologia] Procesando GET: Retornando adyacencias/vecinos actuales.")
         # Formato JSON de vecinos
         routers = Router.objects.all()
         topologia = []
@@ -530,6 +547,7 @@ def gestionar_topologia(request):
         return JsonResponse(topologia, safe=False, status=200)
 
     elif request.method == 'PUT':
+        print("[gestionar_topologia] Procesando PUT: Solicitud de encender daemon de Topología.")
         try:
             body = json.loads(request.body)
             intervalo_min = body.get('intervalo', 5)
@@ -564,6 +582,7 @@ def grafica_topologia(request):
         return JsonResponse({"error": "Método no permitido"}, status=405)
     
     # Crear grafo con NetworkX
+    print("[grafica_topologia] Procesando GET: Generando PNG de la Topologia Dinámica.")
     G = nx.Graph()
     routers = Router.objects.all()
     for r in routers:
@@ -595,17 +614,22 @@ def grafica_topologia(request):
 @catch_errors
 def monitoreo_octetos(request, hostname, interfaz, tiempo):
     """Gestiona el proceso autónomo de muestreo de octetos de entrada."""
+    print(f"[monitoreo_octetos] Buscando router={hostname}, interfaz={interfaz}, tiempo={tiempo}s")
     router = get_object_or_404(Router, hostname=hostname)
     # Validar formato de interfaz requerido: ej: f1_0
     obj_interfaz = get_object_or_404(Interfaz, router=router, nombre=interfaz)
+    print(f"[monitoreo_octetos] Router e interfaz encontrados en la BD.")
 
     if request.method == 'GET':
+        print(f"[monitoreo_octetos] Procesando GET: Recuperando muestras de {interfaz} en {hostname}")
         # Recuperar datos muestreados hasta el momento
         muestras = RegistroOcteto.objects.filter(interfaz=obj_interfaz).order_by('timestamp')
+        print(f"[monitoreo_octetos] Se encontraron {muestras.count()} muestras.")
         datos = [{"timestamp": m.timestamp.strftime('%Y-%m-%d %H:%M:%S'), "octetos_entrada": m.octetos_entrada} for m in muestras]
         return JsonResponse({"interfaz": interfaz, "muestras_recuperadas": datos}, status=200)
 
     elif request.method == 'POST':
+        print(f"[monitoreo_octetos] Procesando POST: Activando worker de monitoreo para {interfaz} cada {tiempo}s")
         # Activa el proceso de monitoreo autónomo
         from monitoreo.models import MonitoreoConfig
         config, _ = MonitoreoConfig.objects.update_or_create(
@@ -617,12 +641,15 @@ def monitoreo_octetos(request, hostname, interfaz, tiempo):
         t = threading.Thread(target=monitoreo_interfaz_worker, args=(obj_interfaz.id, tiempo), daemon=True)
         t.start()
         daemon_config["monitoreo_threads"][obj_interfaz.id] = t
+        print(f"[monitoreo_octetos] Worker lanzado exitosamente para interfaz ID={obj_interfaz.id}")
         
         return JsonResponse({"monitoreo": "activado", "interfaz": interfaz, "intervalo_muestreo_segundos": tiempo}, status=200)
 
     elif request.method == 'DELETE':
+        print(f"[monitoreo_octetos] Procesando DELETE: Deteniendo worker de monitoreo para {interfaz}")
         from monitoreo.models import MonitoreoConfig
         MonitoreoConfig.objects.filter(interfaz=obj_interfaz).update(monitoreo_octetos_activo=False)
+        print(f"[monitoreo_octetos] Worker detenido para {interfaz}.")
         return JsonResponse({"monitoreo": "detenido", "interfaz": interfaz}, status=200)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
@@ -636,17 +663,22 @@ def monitoreo_octetos(request, hostname, interfaz, tiempo):
 @catch_errors
 def gestion_traps(request, hostname, interfaz):
     """GET: Estado actual. POST/DELETE: Activa/Desactiva captura de trampas SNMP."""
+    print(f"[gestion_traps] Buscando router={hostname}, interfaz={interfaz}")
     router = get_object_or_404(Router, hostname=hostname)
     obj_interfaz = get_object_or_404(Interfaz, router=router, nombre=interfaz)
+    print(f"[gestion_traps] Router e interfaz encontrados. Estado actual: {'up' if obj_interfaz.estado else 'down'}")
 
     if request.method == 'GET':
+        print(f"[gestion_traps] Procesando GET: Verificando estado up/down de {interfaz} en {hostname}")
         return JsonResponse({"interfaz": interfaz, "estado": "up" if obj_interfaz.estado else "down"}, status=200)
 
     elif request.method == 'POST':
+        print(f"[gestion_traps] Procesando POST: Activando captura de traps para {interfaz} en {hostname}")
         # Activa el demonio/escuchador de Trampas LinkUp y LinkDown para esta interfaz
         return JsonResponse({"captura_traps": "activada", "interfaz": interfaz, "eventos": ["LinkUp", "LinkDown"]}, status=200)
 
     elif request.method == 'DELETE':
+        print(f"[gestion_traps] Procesando DELETE: Desactivando captura de traps para {interfaz} en {hostname}")
         # Apaga la captura de trampas para la interfaz
         return JsonResponse({"captura_traps": "desactivada", "interfaz": interfaz}, status=200)
 
@@ -661,13 +693,17 @@ def gestion_traps(request, hostname, interfaz):
 def grafica_monitoreo(request, hostname, interfaz):
     """GET: Genera y regresa la gráfica combinada de octetos."""
     if request.method != 'GET':
+        print(f"[grafica_monitoreo] Metodo no permitido: {request.method}")
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
+    print(f"[grafica_monitoreo] Procesando GET: Generando PNG de octetos para {interfaz} en {hostname}")
     router = get_object_or_404(Router, hostname=hostname)
     obj_interfaz = get_object_or_404(Interfaz, router=router, nombre=interfaz)
     
     muestras = RegistroOcteto.objects.filter(interfaz=obj_interfaz).order_by('timestamp')
+    print(f"[grafica_monitoreo] Se encontraron {muestras.count()} muestras para graficar.")
     if not muestras.exists():
+        print(f"[grafica_monitoreo] SIN DATOS: No hay muestras para {interfaz}. Retornando 404.")
         return HttpResponse("No hay datos para graficar", status=404)
 
     # Preparar datos
