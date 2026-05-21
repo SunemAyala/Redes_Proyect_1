@@ -21,6 +21,20 @@ from pysnmp.hlapi import *
 from .models import Router, Interfaz, DispositivoUsuario
 from monitoreo.models import RegistroOcteto
 
+import traceback
+from functools import wraps
+
+def catch_errors(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            error_msg = traceback.format_exc()
+            print(f"[ERROR 500 en {func.__name__}]: {error_msg}")
+            return JsonResponse({"error": "Error interno", "detalle": str(e), "trace": error_msg}, status=500)
+    return wrapper
+
 # ==========================================
 # UTILIDADES DE RED (SNMP / SSH / TRAPS)
 # ==========================================
@@ -277,6 +291,7 @@ def descubrimiento_red_daemon():
 # ==========================================
 
 @csrf_exempt
+@catch_errors
 def usuarios_globales(request):
     """
     GET: Regresa json con todos los usuarios en todos los routers.
@@ -316,7 +331,7 @@ def usuarios_globales(request):
 
         # MODO SIMULACIÓN VS MODO REAL (SSH)
         for router in routers:
-            if getattr(settings, 'DEBUG', True):
+            if getattr(settings, 'DEBUG', True) and not USE_NETWORK_MOCKS:
                 time.sleep(0.05) 
                 ssh_exitoso = True
             else:
@@ -345,6 +360,7 @@ def usuarios_globales(request):
 # ENDPOINTS: ENRUTADORES (/routers y /routers/<hostname>/)
 # ==========================================
 
+@catch_errors
 def lista_routers(request):
     """GET: Regresa la información general de todos los routers."""
     if request.method != 'GET':
@@ -365,6 +381,7 @@ def lista_routers(request):
     return JsonResponse(respuesta, safe=False, status=200)
 
 
+@catch_errors
 def detalle_router(request, hostname):
     """GET: Regresa la información general de un router específico o 404."""
     if request.method != 'GET':
@@ -400,6 +417,7 @@ def detalle_router(request, hostname):
 # ENDPOINTS: INTERFACES (/routers/<hostname>/interfaces)
 # ==========================================
 
+@catch_errors
 def interfaces_router(request, hostname):
     """GET: Regresa en formato JSON la información de las interfaces del router."""
     if request.method != 'GET':
@@ -433,6 +451,7 @@ def interfaces_router(request, hostname):
 # ==========================================
 
 @csrf_exempt
+@catch_errors
 def usuarios_por_enrutador(request, hostname):
     """CRUD de usuarios acotado a un enrutador específico."""
     router = get_object_or_404(Router, hostname=hostname)
@@ -476,6 +495,7 @@ def usuarios_por_enrutador(request, hostname):
 # ==========================================
 
 @csrf_exempt
+@catch_errors
 def gestionar_topologia(request):
     """GET: Regresa routers vecinos. PUT/DELETE: Controla el demonio de exploración."""
     if request.method == 'GET':
@@ -522,6 +542,7 @@ def gestionar_topologia(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 
+@catch_errors
 def grafica_topologia(request):
     """GET: Retorna un archivo PNG con la gráfica de la topología dinámica."""
     if request.method != 'GET':
@@ -556,6 +577,7 @@ def grafica_topologia(request):
 # ==========================================
 
 @csrf_exempt
+@catch_errors
 def monitoreo_octetos(request, hostname, interfaz, tiempo):
     """Gestiona el proceso autónomo de muestreo de octetos de entrada."""
     router = get_object_or_404(Router, hostname=hostname)
@@ -596,6 +618,7 @@ def monitoreo_octetos(request, hostname, interfaz, tiempo):
 # ==========================================
 
 @csrf_exempt
+@catch_errors
 def gestion_traps(request, hostname, interfaz):
     """GET: Estado actual. POST/DELETE: Activa/Desactiva captura de trampas SNMP."""
     router = get_object_or_404(Router, hostname=hostname)
@@ -619,6 +642,7 @@ def gestion_traps(request, hostname, interfaz):
 # ENDPOINTS: GRÁFICA DE MONITOREO (/routers/.../grafica)
 # ==========================================
 
+@catch_errors
 def grafica_monitoreo(request, hostname, interfaz):
     """GET: Genera y regresa la gráfica combinada de octetos."""
     if request.method != 'GET':
