@@ -31,8 +31,9 @@ def catch_errors(func):
             return func(*args, **kwargs)
         except Exception as e:
             error_msg = traceback.format_exc()
-            print(f"[ERROR 500 en {func.__name__}]: {error_msg}")
-            return JsonResponse({"error": "Error interno", "detalle": str(e), "trace": error_msg}, status=500)
+            print(f"[ERROR en {func.__name__}]: {error_msg}")
+            # Forzamos HTTP 200 temporalmente para que Django no intercepte y sobrescriba el JSON con su propia página HTML genérica.
+            return JsonResponse({"error": "Error interno capturado", "detalle": str(e), "trace": error_msg}, status=200)
     return wrapper
 
 # ==========================================
@@ -299,7 +300,13 @@ def usuarios_globales(request):
     PUT: Actualiza un usuario en TODOS los routers.
     DELETE: Elimina un usuario común en TODOS los routers.
     """
-    routers = Router.objects.all()
+    # Verificar si la base de datos está vacía o sin inicializar
+    try:
+        routers = Router.objects.all()
+        if not routers.exists():
+            return JsonResponse({"error": "Base de datos vacía", "solucion": "Ejecuta python poblar_red.py o poblar_semilla.py"}, status=400)
+    except Exception as db_err:
+        return JsonResponse({"error": "Tablas no encontradas", "solucion": "Ejecuta python manage.py migrate", "detalle": str(db_err)}, status=400)
 
     if request.method == 'GET':
         # Agrupar usuarios por nombre para la respuesta global
@@ -498,6 +505,14 @@ def usuarios_por_enrutador(request, hostname):
 @catch_errors
 def gestionar_topologia(request):
     """GET: Regresa routers vecinos. PUT/DELETE: Controla el demonio de exploración."""
+    # Verificar si la base de datos está vacía o sin inicializar
+    try:
+        routers = Router.objects.all()
+        if not routers.exists():
+            return JsonResponse({"error": "Base de datos vacía", "solucion": "Ejecuta python poblar_red.py o poblar_semilla.py"}, status=400)
+    except Exception as db_err:
+        return JsonResponse({"error": "Tablas no encontradas", "solucion": "Ejecuta python manage.py migrate", "detalle": str(db_err)}, status=400)
+
     if request.method == 'GET':
         # Formato JSON de vecinos
         routers = Router.objects.all()
