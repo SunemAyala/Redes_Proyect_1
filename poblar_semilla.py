@@ -16,9 +16,9 @@ def cargar_semilla():
         hostname="Edge",
         defaults={
             "rol": "EDGE",
-            "ip_administrativa": "192.168.100.1", # Cambia esto si la IP administrativa de tu router Edge es distinta
+            "ip_administrativa": "192.168.100.1", 
             "ip_loopback": "192.168.50.1",
-            "empresa": "FI-UNAM",
+            "empresa": "ESCOM",
             "sistema_operativo": "Cisco IOS"
         }
     )
