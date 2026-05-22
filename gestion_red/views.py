@@ -16,15 +16,17 @@ import random
 import os
 from django.utils import timezone
 from netmiko import ConnectHandler
-from pysnmp.hlapi.asyncore.sync import getCmd
-from pysnmp.hlapi.asyncore import (
+from pysnmp.hlapi import (
+    getCmd,
     SnmpEngine,
     CommunityData,
     UdpTransportTarget,
     ContextData,
     ObjectType,
-    ObjectIdentity
+    ObjectIdentity,
+    nextCmd
 )
+
 # Importa tus modelos de la app (ajusta los nombres exactos si varían)
 from .models import Router, Interfaz, DispositivoUsuario
 from monitoreo.models import RegistroOcteto
@@ -63,7 +65,7 @@ def catch_errors(func):
 
 # Variable para forzar el uso de Mocks de red en caso de no tener GNS3 levantado
 # Para usar GNS3 real, cambia esto a False.
-USE_NETWORK_MOCKS = False
+USE_NETWORK_MOCKS = Fals
 
 def snmp_get(ip, community, oid):
     """Realiza una consulta SNMP Get para un OID específico."""
