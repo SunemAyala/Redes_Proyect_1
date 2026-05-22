@@ -279,21 +279,25 @@ def descubrimiento_red_daemon():
                 
                 for idx, nombre_vecino in vecinos_nombres.items():
                     raw_ip =vecinos_ips.get(idx)
+                    logger.info(type(raw_ip))
+                    logger.info(repr(raw_ip))
                     try:
                         raw_bytes = bytes(raw_ip)
-                        logger.error(f"IP: {raw_bytes}")
 
-                        # Cisco a veces agrega byte de tipo
+                        logger.info(f"RAW BYTES: {raw_bytes}")
+
+                        # Algunos dispositivos Cisco agregan un byte inicial de tipo
                         if len(raw_bytes) == 5:
                             raw_bytes = raw_bytes[1:]
 
                         if len(raw_bytes) == 4:
                             ip_vecino = socket.inet_ntoa(raw_bytes)
                         else:
+                            logger.warning(f"Longitud inválida para IP: {len(raw_bytes)}")
                             ip_vecino = "0.0.0.0"
 
                     except Exception as e:
-                        logger.error(f"Error convirtiendo IP: {e}")
+                        logger.error(f"Error convirtiendo IP SNMP: {e}")
                         ip_vecino = "0.0.0.0"
 
                     if nombre_vecino and not Router.objects.filter(hostname=nombre_vecino).exists():
