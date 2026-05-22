@@ -7,6 +7,5 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 sudo -E venv/bin/python manage.py runserver
-
-pip uninstall pysnmp-lextudio
-pip install "pysnmp>=6.2,<7"
+pip uninstall pysnmp -y
+pip install pysnmp==4.4.12 pyasn1==0.4.8
