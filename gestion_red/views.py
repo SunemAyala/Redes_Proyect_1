@@ -293,8 +293,9 @@ def descubrimiento_red_daemon():
 
                     except Exception as e:
                         logger.error(f"Error convirtiendo IP: {e}")
+                        logger.error(f"IP: "{raw_bytes})
                         ip_vecino = "0.0.0.0"
-                        
+
                     if nombre_vecino and not Router.objects.filter(hostname=nombre_vecino).exists():
                         nuevo_router = Router.objects.create(
                             hostname=nombre_vecino, rol='LEAF', 
