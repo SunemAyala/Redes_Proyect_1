@@ -58,8 +58,8 @@
                 "locked": false,
                 "rotation": 0,
                 "svg": "<svg width=\"115\" height=\"40\"><text font-family=\"TypeWriter\" font-size=\"10.0\" font-weight=\"bold\" fill=\"#000000\" fill-opacity=\"1.0\">Aqui va la\nMaquina Virtual </text></svg>",
-                "x": -538,
-                "y": 248,
+                "x": -540,
+                "y": 247,
                 "z": 2
             },
             {
@@ -84,7 +84,7 @@
                 "drawing_id": "ad6d43cd-b1d8-404f-823f-1b0e95110b69",
                 "locked": false,
                 "rotation": 0,
-                "svg": "<svg width=\"102\" height=\"24\"><text font-family=\"TypeWriter\" font-size=\"10.0\" font-weight=\"bold\" fill=\"#000000\" fill-opacity=\"1.0\">192.68.1.1/24</text></svg>",
+                "svg": "<svg width=\"110\" height=\"24\"><text font-family=\"TypeWriter\" font-size=\"10.0\" font-weight=\"bold\" fill=\"#000000\" fill-opacity=\"1.0\">192.168.1.1/24</text></svg>",
                 "x": -173,
                 "y": 23,
                 "z": 2
@@ -429,38 +429,6 @@
             },
             {
                 "filters": {},
-                "link_id": "53fd8017-1848-465f-a5a0-93146a8f0ed1",
-                "link_style": {},
-                "nodes": [
-                    {
-                        "adapter_number": 1,
-                        "label": {
-                            "rotation": 0,
-                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                            "text": "f1/0",
-                            "x": 5,
-                            "y": 50
-                        },
-                        "node_id": "3e736f19-0c9c-4287-aa4b-4068de4a05d7",
-                        "port_number": 0
-                    },
-                    {
-                        "adapter_number": 0,
-                        "label": {
-                            "rotation": 0,
-                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                            "text": "e0",
-                            "x": 63,
-                            "y": -12
-                        },
-                        "node_id": "b8594f69-00e4-4c09-9923-4643a8ffeaab",
-                        "port_number": 0
-                    }
-                ],
-                "suspend": false
-            },
-            {
-                "filters": {},
                 "link_id": "9941ba9f-b9f1-4227-8afb-18d5d9b07b5c",
                 "link_style": {},
                 "nodes": [
@@ -482,8 +450,8 @@
                             "rotation": 0,
                             "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
                             "text": "e0",
-                            "x": 20,
-                            "y": -21
+                            "x": -7,
+                            "y": -15
                         },
                         "node_id": "7bcaab7d-5a55-4597-ba0e-85363c05be2f",
                         "port_number": 0
@@ -646,38 +614,6 @@
                             "y": -10
                         },
                         "node_id": "cd85f7c4-89b7-41a0-b169-60386b7b5952",
-                        "port_number": 0
-                    }
-                ],
-                "suspend": false
-            },
-            {
-                "filters": {},
-                "link_id": "5621d526-ce4d-4ed9-9689-bb4a69e3af89",
-                "link_style": {},
-                "nodes": [
-                    {
-                        "adapter_number": 0,
-                        "label": {
-                            "rotation": 0,
-                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                            "text": "e1",
-                            "x": 48,
-                            "y": 30
-                        },
-                        "node_id": "b8594f69-00e4-4c09-9923-4643a8ffeaab",
-                        "port_number": 1
-                    },
-                    {
-                        "adapter_number": 0,
-                        "label": {
-                            "rotation": 0,
-                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                            "text": "e0",
-                            "x": 20,
-                            "y": -8
-                        },
-                        "node_id": "9c983691-8db7-4e5a-a2c4-3f15358429ca",
                         "port_number": 0
                     }
                 ],
@@ -1032,86 +968,6 @@
             },
             {
                 "compute_id": "vm",
-                "console": 5000,
-                "console_auto_start": false,
-                "console_type": "none",
-                "custom_adapters": [],
-                "first_port_name": null,
-                "height": 32,
-                "label": {
-                    "rotation": 0,
-                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                    "text": "Switch1",
-                    "x": 5,
-                    "y": -25
-                },
-                "locked": false,
-                "name": "Switch1",
-                "node_id": "b8594f69-00e4-4c09-9923-4643a8ffeaab",
-                "node_type": "ethernet_switch",
-                "port_name_format": "Ethernet{0}",
-                "port_segment_size": 0,
-                "properties": {
-                    "ports_mapping": [
-                        {
-                            "name": "Ethernet0",
-                            "port_number": 0,
-                            "type": "access",
-                            "vlan": 1
-                        },
-                        {
-                            "name": "Ethernet1",
-                            "port_number": 1,
-                            "type": "access",
-                            "vlan": 1
-                        },
-                        {
-                            "name": "Ethernet2",
-                            "port_number": 2,
-                            "type": "access",
-                            "vlan": 1
-                        },
-                        {
-                            "name": "Ethernet3",
-                            "port_number": 3,
-                            "type": "access",
-                            "vlan": 1
-                        },
-                        {
-                            "name": "Ethernet4",
-                            "port_number": 4,
-                            "type": "access",
-                            "vlan": 1
-                        },
-                        {
-                            "name": "Ethernet5",
-                            "port_number": 5,
-                            "type": "access",
-                            "vlan": 1
-                        },
-                        {
-                            "name": "Ethernet6",
-                            "port_number": 6,
-                            "type": "access",
-                            "vlan": 1
-                        },
-                        {
-                            "name": "Ethernet7",
-                            "port_number": 7,
-                            "type": "access",
-                            "vlan": 1
-                        }
-                    ]
-                },
-                "symbol": ":/symbols/ethernet_switch.svg",
-                "template_id": "1966b864-93e7-32d5-965f-001384eec461",
-                "width": 72,
-                "x": -419,
-                "y": 101,
-                "z": 1
-            },
-            {
-                "compute_id": "vm",
                 "console": 5001,
                 "console_auto_start": false,
                 "console_type": "none",
@@ -1122,7 +978,7 @@
                     "rotation": 0,
                     "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
                     "text": "Switch2",
-                    "x": 5,
+                    "x": 36,
                     "y": -25
                 },
                 "locked": false,
