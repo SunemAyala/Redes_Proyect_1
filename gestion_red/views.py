@@ -65,7 +65,7 @@ def catch_errors(func):
 
 # Variable para forzar el uso de Mocks de red en caso de no tener GNS3 levantado
 # Para usar GNS3 real, cambia esto a False.
-USE_NETWORK_MOCKS = Fals
+USE_NETWORK_MOCKS = False
 
 def snmp_get(ip, community, oid):
     """Realiza una consulta SNMP Get para un OID específico."""
@@ -82,7 +82,7 @@ def snmp_get(ip, community, oid):
 
     errorIndication, errorStatus, errorIndex, varBinds = next(
         getCmd(SnmpEngine(),
-               CommunityData(community),
+               CommunityData('public'),
                UdpTransportTarget((ip, 161)),
                ContextData(),
                ObjectType(ObjectIdentity(oid)))
