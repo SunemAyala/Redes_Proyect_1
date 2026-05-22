@@ -58,8 +58,8 @@
                 "locked": false,
                 "rotation": 0,
                 "svg": "<svg width=\"115\" height=\"40\"><text font-family=\"TypeWriter\" font-size=\"10.0\" font-weight=\"bold\" fill=\"#000000\" fill-opacity=\"1.0\">Aqui va la\nMaquina Virtual </text></svg>",
-                "x": -779,
-                "y": -200,
+                "x": -540,
+                "y": 247,
                 "z": 2
             },
             {
@@ -614,38 +614,6 @@
                             "y": -10
                         },
                         "node_id": "cd85f7c4-89b7-41a0-b169-60386b7b5952",
-                        "port_number": 0
-                    }
-                ],
-                "suspend": false
-            },
-            {
-                "filters": {},
-                "link_id": "faa645b4-a43d-47de-b605-4ca3a1dce1e8",
-                "link_style": {},
-                "nodes": [
-                    {
-                        "adapter_number": 0,
-                        "label": {
-                            "rotation": 0,
-                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                            "text": "e0",
-                            "x": 66,
-                            "y": -7
-                        },
-                        "node_id": "cd8082c2-92fc-4e9d-88fe-c797a1ff5c70",
-                        "port_number": 0
-                    },
-                    {
-                        "adapter_number": 1,
-                        "label": {
-                            "rotation": 0,
-                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                            "text": "f1/0",
-                            "x": 5,
-                            "y": 51
-                        },
-                        "node_id": "3e736f19-0c9c-4287-aa4b-4068de4a05d7",
                         "port_number": 0
                     }
                 ],
@@ -1352,45 +1320,6 @@
                 "width": 65,
                 "x": 318,
                 "y": 228,
-                "z": 1
-            },
-            {
-                "compute_id": "local",
-                "console": null,
-                "console_auto_start": false,
-                "console_type": "none",
-                "custom_adapters": [],
-                "first_port_name": "",
-                "height": 59,
-                "label": {
-                    "rotation": 0,
-                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                    "text": "Linux-1",
-                    "x": 3,
-                    "y": -25
-                },
-                "locked": false,
-                "name": "Linux-1",
-                "node_id": "cd8082c2-92fc-4e9d-88fe-c797a1ff5c70",
-                "node_type": "virtualbox",
-                "port_name_format": "Ethernet{0}",
-                "port_segment_size": 0,
-                "properties": {
-                    "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
-                    "adapters": 2,
-                    "headless": false,
-                    "linked_clone": false,
-                    "on_close": "power_off",
-                    "ram": 2048,
-                    "usage": "",
-                    "use_any_adapter": false,
-                    "vmname": "Linux"
-                },
-                "symbol": ":/symbols/vbox_guest.svg",
-                "template_id": "ddd84a43-07ff-46eb-8fc3-c4ca2e1d8eed",
-                "width": 65,
-                "x": -540,
-                "y": 241,
                 "z": 1
             }
         ]
