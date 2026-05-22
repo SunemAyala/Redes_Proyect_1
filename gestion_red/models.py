@@ -18,7 +18,7 @@ class Router(models.Model):
     
     # Credenciales por defecto para que los demonios se conecten vía SSH
     ssh_usuario_admin = models.CharField(max_length=50, default="admin")
-    ssh_password_admin = models.CharField(max_length=50, default="admin123")
+    ssh_password_admin = models.CharField(max_length=50, default="admin")
 
     def __str__(self):
         return f"{self.hostname} ({self.rol})"

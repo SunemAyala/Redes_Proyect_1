@@ -1,6 +1,7 @@
 import json
 import time
 import sys
+import socket
 from django.http import HttpResponse, JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
@@ -82,7 +83,7 @@ def snmp_get(ip, community, oid):
 
     errorIndication, errorStatus, errorIndex, varBinds = next(
         getCmd(SnmpEngine(),
-               CommunityData('public'),
+               CommunityData('public',mpModel=0),
                UdpTransportTarget((ip, 161)),
                ContextData(),
                ObjectType(ObjectIdentity(oid)))
@@ -277,7 +278,17 @@ def descubrimiento_red_daemon():
                 vecinos_ips = snmp_walk(r.ip_administrativa, community, '1.3.6.1.4.1.9.9.23.1.2.1.1.4')
                 
                 for idx, nombre_vecino in vecinos_nombres.items():
-                    ip_vecino = str(vecinos_ips.get(idx, "192.168.0.0"))
+                    raw_ip =vecinos_ips.get(idx)
+                    try:
+                        if isinstance(raw_ip, bytes):
+                            logger.info(f"inicio")
+                            ip_vecino = socket.inet_ntoa(raw_ip)
+                            logger.info(f"fin")
+                        else:
+                            logger.info(f"camino 2")
+                            ip_vecino = str(raw_ip)
+                    except Exception:
+                        ip_vecino = "192.168.0.0"
                     
                     if nombre_vecino and not Router.objects.filter(hostname=nombre_vecino).exists():
                         nuevo_router = Router.objects.create(
