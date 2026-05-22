@@ -279,12 +279,12 @@ def descubrimiento_red_daemon():
                 
                 for idx, nombre_vecino in vecinos_nombres.items():
                     raw_ip =vecinos_ips.get(idx)
-                    logger.info(type(raw_ip))
-                    logger.info(repr(raw_ip))
+                    logger.error(type(raw_ip))
+                    logger.error(repr(raw_ip))
                     try:
                         raw_bytes = bytes(raw_ip)
 
-                        logger.info(f"RAW BYTES: {raw_bytes}")
+                        logger.error(f"RAW BYTES: {raw_bytes}")
 
                         # Algunos dispositivos Cisco agregan un byte inicial de tipo
                         if len(raw_bytes) == 5:
