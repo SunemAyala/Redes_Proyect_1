@@ -7,5 +7,6 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 sudo -E venv/bin/python manage.py runserver
-pip uninstall pysnmp -y
-pip install pysnmp==4.4.12 pyasn1==0.4.8
+
+pip uninstall paramiko -y
+pip uninstall netmiko -y

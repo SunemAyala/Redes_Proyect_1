@@ -4,6 +4,7 @@ python-dotenv==1.2.2
 sqlparse==0.5.5
 networkx==3.4.2
 matplotlib==3.10.0
-netmiko==4.5.0
+netmiko==4.1.2
+paramiko==2.7.2
 pysnmp==4.4.12
 pyasn1>=0.4.8,<0.6.1

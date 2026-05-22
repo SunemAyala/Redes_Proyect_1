@@ -144,6 +144,10 @@ def ssh_config_user(router, action, username, privilege):
         'host': router.ip_administrativa,
         'username': router.ssh_usuario_admin,
         'password': router.ssh_password_admin,
+        'global_delay_factor': 2,
+        'disabled_algorithms': {
+            'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']
+        }
     }
     try:
         with ConnectHandler(**device) as net_connect:
