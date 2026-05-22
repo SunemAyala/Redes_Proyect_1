@@ -124,10 +124,15 @@ def snmp_walk(ip, community, oid):
         for varBind in varBinds:
             # Extraer el último índice del OID
             oid_completo = str(varBind[0])
-            indice = int(oid_completo.split('.')[-1])
             valor = str(varBind[1])
-            # Limpiar valores hexadecimales de IPs de cdpCacheAddress si es necesario, 
-            # pero por ahora lo guardamos como string.
+
+            # Obtener TODO lo que viene después del OID base
+            indice = oid_completo[len(oid) + 1:]
+
+            # Si es un índice simple numérico, convertirlo
+            if indice.isdigit():
+                indice = int(indice)
+
             resultados[indice] = valor
             
     return resultados
