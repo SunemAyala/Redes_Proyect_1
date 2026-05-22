@@ -258,6 +258,51 @@ def monitoreo_interfaz_worker(interfaz_id, intervalo):
             break
     logger.info(f"[Monitoreo] Deteniendo trabajador para Interfaz ID: {interfaz_id}")
 
+def obtener_loopback1_ip(ip_router, community):
+    """
+    Obtiene la IP asociada a la interfaz Loopback1 vía SNMP.
+    """
+
+    try:
+        # ifDescr -> nombres de interfaces
+        if_descr = snmp_walk(
+            ip_router,
+            community,
+            '1.3.6.1.2.1.2.2.1.2'
+        )
+
+        loopback_index = None
+
+        # Buscar índice de Loopback1
+        for idx, nombre_if in if_descr.items():
+            if str(nombre_if).strip() == "Loopback1":
+                loopback_index = str(idx)
+                break
+
+        if not loopback_index:
+            logger.warning(f"No se encontró Loopback1 en {ip_router}")
+            return None
+
+        logger.info(f"Loopback1 encontrada con índice {loopback_index}")
+
+        # ipAdEntIfIndex
+        ip_ifindex = snmp_walk(
+            ip_router,
+            community,
+            '1.3.6.1.2.1.4.20.1.2'
+        )
+
+        # Buscar qué IP pertenece al índice Loopback1
+        for ip, ifindex in ip_ifindex.items():
+            if str(ifindex) == loopback_index:
+                logger.info(f"Loopback1 IP encontrada: {ip}")
+                return str(ip)
+
+    except Exception as e:
+        logger.error(f"Error obteniendo Loopback1: {e}")
+
+    return None
+
 def descubrimiento_red_daemon():
     """Explora la red buscando vecinos y actualizando información."""
     community = os.getenv("SNMP_COMMUNITY", "public")
@@ -297,11 +342,21 @@ def descubrimiento_red_daemon():
                         ip_vecino = "0.0.0.0"
 
                     if nombre_vecino and not Router.objects.filter(hostname=nombre_vecino).exists():
+                        # Obtener IP administrativa real (Loopback1)
+                        ip_admin_real = obtener_loopback1_ip(ip_vecino, community)
+
+                        if not ip_admin_real:
+                            logger.warning(
+                                f"No se pudo obtener Loopback1 de {nombre_vecino}, usando IP CDP"
+                            )
+                            ip_admin_real = ip_vecino
+
                         nuevo_router = Router.objects.create(
-                            hostname=nombre_vecino, rol='LEAF', 
-                            ip_administrativa=ip_vecino,
-                            ip_loopback=f"192.168.50.{random.randint(10, 250)}"
-                        )
+                            hostname=nombre_vecino,
+                            rol='LEAF',
+                            ip_administrativa=ip_admin_real,
+                            ip_loopback=ip_admin_real
+)
                         logger.info(f" -> ¡Nuevo router descubierto dinámicamente vía CDP: {nombre_vecino} ({ip_vecino})!")
                         
                         # Población inmediata de interfaces del nuevo router
