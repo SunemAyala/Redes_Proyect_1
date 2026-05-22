@@ -310,50 +310,121 @@ def obtener_loopback1_ip(ip_router, community):
 
 def descubrimiento_red_daemon():
     """Explora la red buscando vecinos y actualizando información."""
+
     community = os.getenv("SNMP_COMMUNITY", "public")
+
     while daemon_config["activo"]:
+
         routers = Router.objects.all()
+
         for r in routers:
+
             logger.info(f"[{timezone.now()}] Escaneando {r.hostname}...")
-            
+
             if not getattr(settings, 'DEBUG', True) or USE_NETWORK_MOCKS:
-                # Actualizar SO vía SNMP
-                desc = snmp_get(r.ip_administrativa, community, '.1.3.6.1.2.1.1.1.0')
+
+                # =========================
+                # Actualizar sistema operativo
+                # =========================
+
+                desc = snmp_get(
+                    r.ip_administrativa,
+                    community,
+                    '.1.3.6.1.2.1.1.1.0'
+                )
+
                 if desc:
                     r.sistema_operativo = desc
                     r.save()
-                    
+
+                # =========================
                 # Descubrir vecinos CDP
-                vecinos_nombres = snmp_walk(r.ip_administrativa, community, '1.3.6.1.4.1.9.9.23.1.2.1.1.6')
-                vecinos_ips = snmp_walk(r.ip_administrativa, community, '1.3.6.1.4.1.9.9.23.1.2.1.1.4')
-                
+                # =========================
+
+                vecinos_nombres = snmp_walk(
+                    r.ip_administrativa,
+                    community,
+                    '1.3.6.1.4.1.9.9.23.1.2.1.1.6'
+                )
+
+                vecinos_ips = snmp_walk(
+                    r.ip_administrativa,
+                    community,
+                    '1.3.6.1.4.1.9.9.23.1.2.1.1.4'
+                )
+
                 for idx, nombre_vecino in vecinos_nombres.items():
-                    raw_ip =vecinos_ips.get(idx)
-                    logger.error(type(raw_ip))
-                    logger.error(repr(raw_ip))
+
+                    raw_ip = vecinos_ips.get(idx)
+
+                    logger.info(f"RAW IP: {repr(raw_ip)}")
+
+                    # =========================
+                    # Convertir IP CDP
+                    # =========================
+
                     try:
-                        raw_bytes = raw_ip.encode('latin1')
+
+                        if isinstance(raw_ip, str):
+
+                            raw_bytes = raw_ip.encode('latin1')
+
+                        else:
+
+                            raw_bytes = bytes(raw_ip)
 
                         logger.info(f"RAW BYTES: {raw_bytes}")
 
+                        # Cisco puede agregar byte de tipo
+                        if len(raw_bytes) == 5:
+                            raw_bytes = raw_bytes[1:]
+
                         if len(raw_bytes) == 4:
+
                             ip_vecino = socket.inet_ntoa(raw_bytes)
+
                         else:
-                            logger.warning(f"Longitud inválida: {len(raw_bytes)}")
+
+                            logger.warning(
+                                f"Longitud inválida IP CDP: {len(raw_bytes)}"
+                            )
+
                             ip_vecino = "0.0.0.0"
 
                     except Exception as e:
-                        logger.error(f"Error convirtiendo IP: {e}")
+
+                        logger.error(f"Error convirtiendo IP CDP: {e}")
+
                         ip_vecino = "0.0.0.0"
 
-                    if nombre_vecino and not Router.objects.filter(hostname=nombre_vecino).exists():
-                        # Obtener IP administrativa real (Loopback1)
-                        ip_admin_real = obtener_loopback1_ip(ip_vecino, community)
+                    logger.info(
+                        f"Vecino descubierto: {nombre_vecino} ({ip_vecino})"
+                    )
+
+                    # =========================
+                    # Crear router si no existe
+                    # =========================
+
+                    if (
+                        nombre_vecino and
+                        not Router.objects.filter(
+                            hostname=nombre_vecino
+                        ).exists()
+                    ):
+
+                        # Obtener Loopback1 real
+                        ip_admin_real = obtener_loopback1_ip(
+                            ip_vecino,
+                            community
+                        )
 
                         if not ip_admin_real:
+
                             logger.warning(
-                                f"No se pudo obtener Loopback1 de {nombre_vecino}, usando IP CDP"
+                                f"No se encontró Loopback1 para "
+                                f"{nombre_vecino}, usando IP CDP"
                             )
+
                             ip_admin_real = ip_vecino
 
                         nuevo_router = Router.objects.create(
@@ -361,36 +432,153 @@ def descubrimiento_red_daemon():
                             rol='LEAF',
                             ip_administrativa=ip_admin_real,
                             ip_loopback=ip_admin_real
-)
-                        logger.info(f" -> ¡Nuevo router descubierto dinámicamente vía CDP: {nombre_vecino} ({ip_vecino})!")
-                        
-                        # Población inmediata de interfaces del nuevo router
-                        from .models import Interfaz
-                        ifDescr_walk = snmp_walk(ip_vecino, community, '1.3.6.1.2.1.2.2.1.2')
-                        ifOper_walk = snmp_walk(ip_vecino, community, '1.3.6.1.2.1.2.2.1.8')
-                        
-                        for idx_if, nombre_if in ifDescr_walk.items():
-                            estado = True if str(ifOper_walk.get(idx_if, '2')) == '1' else False
-                            Interfaz.objects.get_or_create(
-                                router=nuevo_router,
-                                nombre=str(nombre_if),
-                                defaults={'estado': estado, 'ip_address': '0.0.0.0', 'netmask': '0.0.0.0'}
-                            )
-                        log(f"    -> Interfaces de {nombre_vecino} guardadas exitosamente.")
-            
-            # SIMULACIÓN DE DESCUBRIMIENTO DINÁMICO (Fallback)
-            if getattr(settings, 'DEBUG', True) and not USE_NETWORK_MOCKS and random.random() > 0.8:
-                new_host = f"TOR-{random.randint(10, 99)}"
-                if not Router.objects.filter(hostname=new_host).exists():
-                    Router.objects.create(
-                        hostname=new_host, rol='LEAF', 
-                        ip_administrativa=f"192.168.100.{random.randint(10, 250)}",
-                        ip_loopback=f"192.168.50.{random.randint(10, 250)}"
-                    )
-                    logger.info(f" -> ¡Nuevo router simulado: {new_host}!")
-            
-        time.sleep(daemon_config["intervalo"])
+                        )
 
+                        logger.info(
+                            f"-> Nuevo router descubierto: "
+                            f"{nombre_vecino} "
+                            f"(Mgmt: {ip_admin_real})"
+                        )
+
+                        # =========================
+                        # Descubrir interfaces
+                        # =========================
+
+                        from .models import Interfaz
+
+                        # Nombres interfaces
+                        ifDescr_walk = snmp_walk(
+                            ip_vecino,
+                            community,
+                            '1.3.6.1.2.1.2.2.1.2'
+                        )
+
+                        # Estado interfaces
+                        ifOper_walk = snmp_walk(
+                            ip_vecino,
+                            community,
+                            '1.3.6.1.2.1.2.2.1.8'
+                        )
+
+                        # IP -> ifIndex
+                        ip_ifindex = snmp_walk(
+                            ip_vecino,
+                            community,
+                            '1.3.6.1.2.1.4.20.1.2'
+                        )
+
+                        # IP -> netmask
+                        ip_netmask = snmp_walk(
+                            ip_vecino,
+                            community,
+                            '1.3.6.1.2.1.4.20.1.3'
+                        )
+
+                        # =========================
+                        # Crear mapa:
+                        # ifIndex -> IP
+                        # =========================
+
+                        interfaces_ips = {}
+
+                        for ip_addr, if_index in ip_ifindex.items():
+
+                            interfaces_ips[str(if_index)] = str(ip_addr)
+
+                        # =========================
+                        # Crear mapa:
+                        # IP -> máscara
+                        # =========================
+
+                        interfaces_masks = {}
+
+                        for ip_addr, mask in ip_netmask.items():
+
+                            interfaces_masks[str(ip_addr)] = str(mask)
+
+                        # =========================
+                        # Guardar interfaces
+                        # =========================
+
+                        for idx_if, nombre_if in ifDescr_walk.items():
+
+                            estado = (
+                                str(ifOper_walk.get(idx_if, '2')) == '1'
+                            )
+
+                            ip_interfaz = interfaces_ips.get(
+                                str(idx_if),
+                                '0.0.0.0'
+                            )
+
+                            netmask = interfaces_masks.get(
+                                ip_interfaz,
+                                '0.0.0.0'
+                            )
+
+                            interfaz, creada = (
+                                Interfaz.objects.get_or_create(
+                                    router=nuevo_router,
+                                    nombre=str(nombre_if),
+                                    defaults={
+                                        'estado': estado,
+                                        'ip_address': ip_interfaz,
+                                        'netmask': netmask
+                                    }
+                                )
+                            )
+
+                            if not creada:
+
+                                interfaz.estado = estado
+                                interfaz.ip_address = ip_interfaz
+                                interfaz.netmask = netmask
+                                interfaz.save()
+
+                            logger.info(
+                                f"Interfaz {nombre_if} | "
+                                f"IP: {ip_interfaz} | "
+                                f"MASK: {netmask} | "
+                                f"UP: {estado}"
+                            )
+
+                        logger.info(
+                            f"Interfaces de {nombre_vecino} "
+                            f"guardadas correctamente."
+                        )
+
+            # =========================
+            # Simulación fallback
+            # =========================
+
+            if (
+                getattr(settings, 'DEBUG', True)
+                and not USE_NETWORK_MOCKS
+                and random.random() > 0.8
+            ):
+
+                new_host = f"TOR-{random.randint(10, 99)}"
+
+                if not Router.objects.filter(
+                    hostname=new_host
+                ).exists():
+
+                    Router.objects.create(
+                        hostname=new_host,
+                        rol='LEAF',
+                        ip_administrativa=(
+                            f"192.168.100.{random.randint(10, 250)}"
+                        ),
+                        ip_loopback=(
+                            f"192.168.50.{random.randint(10, 250)}"
+                        )
+                    )
+
+                    logger.info(
+                        f"-> Nuevo router simulado: {new_host}"
+                    )
+
+        time.sleep(daemon_config["intervalo"])
 # ==========================================
 # ENDPOINTS: CRUD USUARIOS GLOBAL (/usuarios)
 # ==========================================
