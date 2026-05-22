@@ -280,16 +280,21 @@ def descubrimiento_red_daemon():
                 for idx, nombre_vecino in vecinos_nombres.items():
                     raw_ip =vecinos_ips.get(idx)
                     try:
-                        if isinstance(raw_ip, bytes):
-                            logger.info(f"inicio")
-                            ip_vecino = socket.inet_ntoa(raw_ip)
-                            logger.info(f"fin")
+                        raw_bytes = bytes(raw_ip)
+
+                        # Cisco a veces agrega byte de tipo
+                        if len(raw_bytes) == 5:
+                            raw_bytes = raw_bytes[1:]
+
+                        if len(raw_bytes) == 4:
+                            ip_vecino = socket.inet_ntoa(raw_bytes)
                         else:
-                            logger.info(f"camino 2")
-                            ip_vecino = str(raw_ip)
-                    except Exception:
-                        ip_vecino = "192.168.0.0"
-                    
+                            ip_vecino = "0.0.0.0"
+
+                    except Exception as e:
+                        logger.error(f"Error convirtiendo IP: {e}")
+                        ip_vecino = "0.0.0.0"
+                        
                     if nombre_vecino and not Router.objects.filter(hostname=nombre_vecino).exists():
                         nuevo_router = Router.objects.create(
                             hostname=nombre_vecino, rol='LEAF', 
