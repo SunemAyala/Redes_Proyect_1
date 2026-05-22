@@ -16,7 +16,15 @@ import random
 import os
 from django.utils import timezone
 from netmiko import ConnectHandler
-from pysnmp.hlapi import *
+from pysnmp.hlapi import (
+    getCmd,
+    SnmpEngine,
+    CommunityData,
+    UdpTransportTarget,
+    ContextData,
+    ObjectType,
+    ObjectIdentity
+)
 
 # Importa tus modelos de la app (ajusta los nombres exactos si varían)
 from .models import Router, Interfaz, DispositivoUsuario
